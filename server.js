@@ -206,6 +206,33 @@ router.route('/msgs/:msg_id')
 		});
 	});
 
+// on routes that end in /msg/:msg_id
+// ----------------------------------------------------
+router.route('/convo')
+
+	// get the user with that id (accessed at GET http://localhost:8080/api/msgs/:msg_id)
+	.get(function(req, res) {
+		/*Msg.findById(req.params.msg_id, function(err, msg) {
+			if (err)
+				res.send(err);
+			res.json(msg);
+		});*/
+		var query = Msg.find({});
+		query.or([{ 
+			'senderId': '53d7b4af8795469065000002',
+			'receiverId': '53d7b4af8795469065000001' 
+		}, { 
+			'senderId': '53d7b4af8795469065000001',
+			'receiverId': '53d7b4af8795469065000002' 
+		}]).sort('-timestamp');
+		query.exec(function (err, msgs) {
+		    // called when the `query.complete` or `query.error` are called
+		    // internally
+		    if (err)
+		    	res.send(err);
+		    res.json(msgs);
+		});
+	});
 
 
 
