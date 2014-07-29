@@ -1,7 +1,4 @@
-// server.j
-
-
-
+// server.js
 
 
 // BASE SETUP
