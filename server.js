@@ -21,7 +21,7 @@ mongoose.connect('mongodb://node:node@novus.modulusmongo.net:27017/Iganiq8o'); /
 var User = require('./app/models/user');
 var Msg = require('./app/models/msg');
 
-
+var helper = require('./helper.js'); // helper methods
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -129,18 +129,73 @@ router.route('/msgs')
 
 	// create a msg (accessed at POST http://localhost:8080/api/msgs)
 	.post(function(req, res) {
+
+		var senderId = req.body.senderId;
+		var receiverId = req.body.receiverId;
 		
 		var msg = new Msg(); 		// create a new instance of the Msg model
-		msg.senderId = req.body.senderId;   // set the msgs sender
-		msg.receiverId = req.body.receiverId;   // set the msgs receiver
+		msg.senderId = senderId;   // set the msgs sender
+		msg.receiverId = receiverId;   // set the msgs receiver
 		msg.text = req.body.text;  // set the msgs text
 
-		// save the bear and check for errors
-		msg.save(function(err) {
-			if (err)
-				res.send(err);
+		///////////////////////
+		var r;
 
-			res.json({ message: 'Message created!' });
+		// Add each to the other's list of convoBuddies
+		_updateBuddyList(senderId, receiverId);
+		//console.log(msg1);
+		_updateBuddyList(receiverId, senderId);
+		//console.log(msg2);	
+		_saveItem(msg);
+		
+		function _updateBuddyList(id1, id2) {
+			User.findById(id1, function(err, user) {
+				if (err) {
+					res.send(err);
+				}
+				var userConvoBuddies = user.convoBuddies;
+				bool = false;
+				if (!helper.inArray(userConvoBuddies, id2)) {
+					user.convoBuddies.push(id2);
+		
+					user.save(function(err) {
+						if (err) res.send(err);
+		
+						r = id2 + " was added to " + id1 + "'s convoBuddies";
+						/*res.json({ 
+							message: "JSON: " + id2 + " was added to " + id1 + "'s convoBuddies"
+						});*/
+						//return id2 + " was added to " + id1 + "'s convoBuddies";
+					});
+				}
+				else {
+					r = id2 + " is already in " + id1 + "'s convoBuddies";
+					/*res.json({
+						message: "json"+id2 + " is already in " + id1 + "'s convoBuddies"
+					});*/
+				}
+			});
+		}
+
+		////////////////////////
+
+
+		// save the bear and check for errors
+		function _saveItem(item) {
+			msg.save(function(err) {
+				if (err)
+					res.send(err);
+	
+				/*res.json({ 
+					message: 'Message created!',
+					"res" : r
+				});*/
+			});
+		}
+
+		res.json({
+			message: 'Message created!',
+			"res" : r
 		});
 		
 	})
