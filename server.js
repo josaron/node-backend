@@ -21,7 +21,7 @@ mongoose.connect('mongodb://node:node@novus.modulusmongo.net:27017/Iganiq8o'); /
 var User = require('./app/models/user');
 var Msg = require('./app/models/msg');
 
-var helper = require('./helper.js'); // helper methods
+var helper_backend = require('./helper_backend.js'); // helper methods
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -71,6 +71,11 @@ router.route('/users')
 
 			res.json(users);
 		});
+	})
+
+	.delete(function(req, res) {
+		helper_backend.clearDB(User);
+		res.json({ message: 'Users successfully deleted' });
 	});
 
 
@@ -139,75 +144,39 @@ router.route('/msgs')
 		msg.text = req.body.text;  // set the msgs text
 
 		///////////////////////
-		var r;
 
 		// Add each to the other's list of convoBuddies
-		_updateBuddyList(senderId, receiverId);
-		//console.log(msg1);
-		_updateBuddyList(receiverId, senderId);
-		//console.log(msg2);	
-		_saveItem(msg);
-		
-		function _updateBuddyList(id1, id2) {
-			User.findById(id1, function(err, user) {
-				if (err) {
-					res.send(err);
-				}
-				var userConvoBuddies = user.convoBuddies;
-				bool = false;
-				if (!helper.inArray(userConvoBuddies, id2)) {
-					user.convoBuddies.push(id2);
-		
-					user.save(function(err) {
-						if (err) res.send(err);
-		
-						r = id2 + " was added to " + id1 + "'s convoBuddies";
-						/*res.json({ 
-							message: "JSON: " + id2 + " was added to " + id1 + "'s convoBuddies"
-						});*/
-						//return id2 + " was added to " + id1 + "'s convoBuddies";
-					});
-				}
-				else {
-					r = id2 + " is already in " + id1 + "'s convoBuddies";
-					/*res.json({
-						message: "json"+id2 + " is already in " + id1 + "'s convoBuddies"
-					});*/
-				}
-			});
-		}
+		helper_backend.updateBuddyList(senderId, receiverId);
+		helper_backend.updateBuddyList(receiverId, senderId);
 
 		////////////////////////
 
 
 		// save the bear and check for errors
-		function _saveItem(item) {
-			msg.save(function(err) {
-				if (err)
-					res.send(err);
-	
-				/*res.json({ 
-					message: 'Message created!',
-					"res" : r
-				});*/
+		msg.save(function(err) {
+			if (err) {
+				res.send(err);
+			}
+			res.json({ 
+				message: 'Message created!'
 			});
-		}
-
-		res.json({
-			message: 'Message created!',
-			"res" : r
 		});
-		
 	})
 
 	// get all the msgs (accessed at GET http://localhost:8080/api/msgs)
 	.get(function(req, res) {
+		//helper_backend.clearDB('msgs');
 		Msg.find(function(err, msgs) {
 			if (err)
 				res.send(err);
 
 			res.json(msgs);
 		});
+	})
+
+	.delete(function(req, res) {
+		helper_backend.clearDB(Msg);
+		res.json({ message: 'Msgs successfully deleted' });
 	});
 
 
@@ -264,14 +233,7 @@ router.route('/msgs/:msg_id')
 // on routes that end in /msg/:msg_id
 // ----------------------------------------------------
 router.route('/convo')
-
-	// get the user with that id (accessed at GET http://localhost:8080/api/msgs/:msg_id)
 	.get(function(req, res) {
-		/*Msg.findById(req.params.msg_id, function(err, msg) {
-			if (err)
-				res.send(err);
-			res.json(msg);
-		});*/
 		var query = Msg.find({});
 		query.or([{ 
 			'senderId': '53d7b4af8795469065000002',
